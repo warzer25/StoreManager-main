@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+
+# SQLite dev database (created at runtime by the zero-setup fallback)
+*.db
+*.db-shm
+*.db-wal
+
+# Rider / VS / VS Code
+.idea/
+.vs/
+*.suo
+
+# macOS
+.DS_Store

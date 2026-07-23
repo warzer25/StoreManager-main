@@ -1,0 +1,70 @@
+@page "/"
+
+<PageTitle>Dashboard · StoreManager</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Dashboard</MudText>
+<MudText Typo="Typo.body1" Class="mud-text-secondary mb-6">
+    A small shop inventory and sales system — built one vertical slice at a time.
+</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="2" Class="h-100">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Color="Color.Primary" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h6">Categories</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            Groups of products. Full create, read, update and delete.
+                        </MudText>
+                    </div>
+                </MudStack>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Href="categories" Variant="Variant.Text" Color="Color.Primary"
+                           EndIcon="@Icons.Material.Filled.ArrowForward">
+                    Open categories
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="2" Class="h-100">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Secondary" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h6">Products</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            Items with price and stock count. Coming in Slice 3.
+                        </MudText>
+                    </div>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="2" Class="h-100">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.PointOfSale" Color="Color.Tertiary" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h6">Point of Sale</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            Ring up a sale and deduct stock. Coming in Slice 4.
+                        </MudText>
+                    </div>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-6">
+    <b>This is the scaffold (Slice 2).</b> Trace the request: Browser → Blazor page →
+    CategoryService → API Controller → EF Core → SQL Server → back. Start at
+    <MudLink Href="categories">Categories</MudLink>.
+</MudAlert>

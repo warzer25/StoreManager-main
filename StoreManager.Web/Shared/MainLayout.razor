@@ -1,0 +1,63 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
+        <MudIcon Icon="@Icons.Material.Filled.Storefront" Class="mr-2" />
+        <MudText Typo="Typo.h6">StoreManager</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Toggle light / dark">
+            <MudIconButton Icon="@DarkLightModeIcon" Color="Color.Inherit" OnClick="ToggleDarkMode" />
+        </MudTooltip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always"
+               Variant="@DrawerVariant.Responsive">
+        <MudDrawerHeader Class="pb-0">
+            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Summer Camp · Module 2</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6 mb-8">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#00897B",
+            Secondary = "#FB8C00",
+            AppbarBackground = "#00897B",
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#26A69A",
+            Secondary = "#FFB74D",
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "8px",
+        },
+    };
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+    private void ToggleDarkMode() => _isDarkMode = !_isDarkMode;
+
+    private string DarkLightModeIcon =>
+        _isDarkMode ? Icons.Material.Rounded.LightMode : Icons.Material.Rounded.DarkMode;
+}

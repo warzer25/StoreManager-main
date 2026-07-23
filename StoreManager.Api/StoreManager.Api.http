@@ -1,0 +1,33 @@
+@StoreManager.Api_HostAddress = http://localhost:5136
+
+### Get all categories
+GET {{StoreManager.Api_HostAddress}}/api/categories
+Accept: application/json
+
+### Get one category
+GET {{StoreManager.Api_HostAddress}}/api/categories/1
+Accept: application/json
+
+### Create a category
+POST {{StoreManager.Api_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Frozen",
+  "description": "Frozen goods"
+}
+
+### Update a category (id must match the route)
+PUT {{StoreManager.Api_HostAddress}}/api/categories/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Beverages",
+  "description": "Drinks, soft drinks and water"
+}
+
+### Delete a category
+DELETE {{StoreManager.Api_HostAddress}}/api/categories/5
+
+###

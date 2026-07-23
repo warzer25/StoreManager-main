@@ -1,0 +1,113 @@
+@page "/categories"
+@inject CategoryService CategoryService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Categories · StoreManager</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h4">Categories</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@(() => Navigation.NavigateTo("categories/new"))">
+        New Category
+    </MudButton>
+</MudStack>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4"
+              ContentAlignment="HorizontalAlignment.Left">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%">
+            <span>@_error</span>
+            <MudButton Color="Color.Inherit" Size="Size.Small" OnClick="LoadAsync">Retry</MudButton>
+        </MudStack>
+    </MudAlert>
+}
+
+<MudTable Items="_categories" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2"
+          Loading="_loading" LoadingProgressColor="Color.Primary">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">
+            <MudText Typo="Typo.body1">@context.Name</MudText>
+        </MudTd>
+        <MudTd DataLabel="Description">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                @(string.IsNullOrWhiteSpace(context.Description) ? "—" : context.Description)
+            </MudText>
+        </MudTd>
+        <MudTd DataLabel="Actions" Style="text-align:right">
+            <MudTooltip Text="Edit">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                               OnClick="@(() => Navigation.NavigateTo($"categories/{context.Id}/edit"))" />
+            </MudTooltip>
+            <MudTooltip Text="Delete">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                               OnClick="@(() => DeleteAsync(context))" />
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        @if (_error is null)
+        {
+            <MudText Class="my-4">No categories yet. Click “New Category” to add the first one.</MudText>
+        }
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<Category> _categories = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _categories = await CategoryService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load categories. Is the API running? ({ex.Message})";
+            _categories = new();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteAsync(Category category)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete category",
+            $"Delete \"{category.Name}\"? This cannot be undone.",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await CategoryService.DeleteAsync(category.Id);
+            _categories.Remove(category);
+            Snackbar.Add($"Deleted \"{category.Name}\".", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+}

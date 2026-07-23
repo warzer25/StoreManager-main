@@ -1,0 +1,119 @@
+@page "/categories/new"
+@page "/categories/{Id:int}/edit"
+@inject CategoryService CategoryService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>@Title · StoreManager</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="Cancel" />
+    <MudText Typo="Typo.h4">@Title</MudText>
+</MudStack>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_notFound)
+{
+    <MudAlert Severity="Severity.Warning">
+        Category @Id was not found.
+        <MudLink Href="categories">Back to categories</MudLink>
+    </MudAlert>
+}
+else
+{
+    <MudCard Elevation="2" Style="max-width:640px">
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync">
+            <DataAnnotationsValidator />
+            <MudCardContent>
+                <MudTextField @bind-Value="_model.Name" For="@(() => _model.Name)"
+                              Label="Name" Variant="Variant.Outlined" Immediate="true"
+                              Class="mb-4" />
+                <MudTextField @bind-Value="_model.Description" For="@(() => _model.Description)"
+                              Label="Description" Variant="Variant.Outlined"
+                              Lines="3" />
+            </MudCardContent>
+            <MudCardActions Class="px-4 pb-4">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                           Color="Color.Primary" Disabled="_saving"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @(_saving ? "Saving…" : "Save")
+                </MudButton>
+                <MudButton OnClick="Cancel" Variant="Variant.Text" Class="ml-2">Cancel</MudButton>
+            </MudCardActions>
+        </EditForm>
+    </MudCard>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Category _model = new();
+    private bool _loading;
+    private bool _saving;
+    private bool _notFound;
+
+    private bool IsEdit => Id.HasValue;
+    private string Title => IsEdit ? "Edit category" : "New category";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsEdit)
+        {
+            _loading = true;
+            try
+            {
+                var category = await CategoryService.GetByIdAsync(Id!.Value);
+                if (category is null)
+                {
+                    _notFound = true;
+                }
+                else
+                {
+                    _model = category;
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Could not load category: {ex.Message}", Severity.Error);
+                _notFound = true;
+            }
+            finally
+            {
+                _loading = false;
+            }
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _saving = true;
+        try
+        {
+            if (IsEdit)
+            {
+                await CategoryService.UpdateAsync(_model);
+                Snackbar.Add($"Saved \"{_model.Name}\".", Severity.Success);
+            }
+            else
+            {
+                await CategoryService.CreateAsync(_model);
+                Snackbar.Add($"Created \"{_model.Name}\".", Severity.Success);
+            }
+
+            Navigation.NavigateTo("categories");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => Navigation.NavigateTo("categories");
+}
