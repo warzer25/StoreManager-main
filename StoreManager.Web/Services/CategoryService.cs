@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using StoreManager.Web.Models;
-
+//hi
 namespace StoreManager.Web.Services;
 
 public class CategoryService(HttpClient http)
