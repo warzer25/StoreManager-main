@@ -7,9 +7,14 @@ public class CategoryService(HttpClient http)
 {
     private const string BasePath = "api/categories";
 
-    public async Task<List<Category>> GetAllAsync()
+    public async Task<List<Category>> GetAllAsync(string? term = null)
     {
-        return await http.GetFromJsonAsync<List<Category>>(BasePath) ?? new List<Category>();
+        var url = BasePath;
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            url += $"?term={Uri.EscapeDataString(term)}";
+        }
+        return await http.GetFromJsonAsync<List<Category>>(url) ?? new List<Category>();
     }
 
     public async Task<Category?> GetByIdAsync(int id)

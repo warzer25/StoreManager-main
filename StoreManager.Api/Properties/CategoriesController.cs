@@ -10,9 +10,19 @@ namespace StoreManager.Api.Controllers;
 public class CategoriesController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Category>>> GetAll()
+    public async Task<ActionResult<IEnumerable<Category>>> GetAll([FromQuery] string? term = null)
     {
-        var categories = await db.Categories
+        IQueryable<Category> query = db.Categories;
+
+        // If a search term is provided, filter the results
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            var lowerTerm = term.Trim().ToLower();
+            query = query.Where(c => c.Name.ToLower().Contains(lowerTerm) ||
+                                     (c.Description != null && c.Description.ToLower().Contains(lowerTerm)));
+        }
+
+        var categories = await query
             .OrderBy(c => c.Name)
             .ToListAsync();
 

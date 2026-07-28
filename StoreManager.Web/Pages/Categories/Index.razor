@@ -15,6 +15,29 @@
     </MudButton>
 </MudStack>
 
+<!-- 👇 NEW: Search bar row -->
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small">
+    <MudTextField @bind-Value="_searchTerm"
+                  Label="Search categories"
+                  Placeholder="Type name or description..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true"
+                  OnKeyUp="@(async (e) => { if (e.Key == "Enter") await PerformSearch(); })"
+                  Style="flex:1; min-width:200px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Search"
+               OnClick="@PerformSearch">
+        Search
+    </MudButton>
+    <MudButton Variant="Variant.Text" Color="Color.Secondary"
+               StartIcon="@Icons.Material.Filled.Clear"
+               OnClick="@ClearSearch"
+               Disabled="@string.IsNullOrWhiteSpace(_searchTerm)">
+        Clear
+    </MudButton>
+</MudStack>
+
 @if (_error is not null)
 {
     <MudAlert Severity="Severity.Error" Class="mb-4"
@@ -65,16 +88,18 @@
     private List<Category> _categories = new();
     private bool _loading = true;
     private string? _error;
+    private string _searchTerm = ""; // 👈 NEW
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
+    // 👇 Modified: passes the search term to the service
     private async Task LoadAsync()
     {
         _loading = true;
         _error = null;
         try
         {
-            _categories = await CategoryService.GetAllAsync();
+            _categories = await CategoryService.GetAllAsync(_searchTerm);
         }
         catch (Exception ex)
         {
@@ -85,6 +110,19 @@
         {
             _loading = false;
         }
+    }
+
+    // 👇 NEW: perform search (just reloads with current term)
+    private async Task PerformSearch()
+    {
+        await LoadAsync();
+    }
+
+    // 👇 NEW: clear search and reload all
+    private async Task ClearSearch()
+    {
+        _searchTerm = "";
+        await LoadAsync();
     }
 
     private async Task DeleteAsync(Category category)
