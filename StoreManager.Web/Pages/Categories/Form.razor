@@ -48,6 +48,11 @@ else
 }
 
 @code {
+	// this Form.razor page is used for both creating a new category and editing an existing one
+	// this file is used in conjunction with the CategoryService to handle the data operations,
+    //  and it uses MudBlazor components for the UI ,  
+
+
     [Parameter] public int? Id { get; set; }
 
     private Category _model = new();

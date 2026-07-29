@@ -6,15 +6,21 @@ namespace StoreManager.Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    // this is a DbContext class for the StoreManager API, which represents the database context for the application.
+    // It inherits from the DbContext class provided by Entity Framework Core and is configured with options passed in through the constructor.
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // This method is called when the model for the context is being created.
+        // It allows you to configure the model and its relationships using the ModelBuilder API.
+
         base.OnModelCreating(modelBuilder);
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
+            // This loop iterates through all the entity types in the model and sets their table names and column names to snake_case format.
             entity.SetTableName(ToSnakeCase(entity.GetTableName()!));
 
             foreach (var property in entity.GetProperties())
@@ -24,6 +30,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         }
 
         modelBuilder.Entity<Category>().HasData(
+            // this is a seed data for the Category entity,
+            // which creates four initial categories in the database: Beverages, Snacks, Dairy, and Cleaning.
             new Category { Id = 1, Name = "Beverages", Description = "Drinks and soft drinks" },
             new Category { Id = 2, Name = "Snacks", Description = "Chips and packaged snacks" },
             new Category { Id = 3, Name = "Dairy", Description = "Milk, cheese and eggs" },
@@ -31,6 +39,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         );
 
         modelBuilder.Entity<User>().HasData(
+            // this is a seed data for the User entity, which creates two initial users in the database: an admin user and a cashier user.
             new User
             {
                 Id = 1,
@@ -54,6 +63,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     private static string ToSnakeCase(string input)
     {
+        // This method converts a given string to snake_case format.
         if (string.IsNullOrEmpty(input))
         {
             return input;
@@ -62,6 +72,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         var builder = new StringBuilder(input.Length + 8);
         for (var i = 0; i < input.Length; i++)
         {
+            // This loop iterates through each character in the input string and checks if it is an uppercase letter.
             var c = input[i];
             if (char.IsUpper(c))
             {

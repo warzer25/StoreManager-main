@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;  // 👈 IMPORTANT: Add this using
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 using StoreManager.Api.Data;
@@ -6,9 +7,13 @@ using StoreManager.Api.Models;
 
 namespace StoreManager.Api.Controllers;
 
+// this controller is responsible for managing users in the system.
+// It provides endpoints for retrieving, creating, and deleting users.
+// Access to these endpoints is controlled based on user roles (admin and cashier).
+
 [ApiController]
 [Route("api/[controller]")]
-// [Authorize]  // ← REMOVED for now
+[Authorize]  
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -19,8 +24,11 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "admin,cashier")]
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
     {
+        // this endpoint returns a list of users in the system.
+        // Only users with the "admin" or "cashier" role can access this endpoint.
         var users = await _context.Users
             .Select(u => new UserResponse
             {
@@ -36,17 +44,18 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    // [Authorize(Roles = "admin")]  // ← REMOVED for now
+    [Authorize(Roles = "admin")] 
     public async Task<ActionResult<UserResponse>> CreateUser(CreateUserRequest request)
     {
-        // Validate email uniqueness
+        // this endpoint allows an admin to create a new user in the system.
+        // It checks if the email already exists, hashes the password, and saves the new user to the database.
+
         var existing = await _context.Users.AnyAsync(u => u.Email == request.Email);
         if (existing)
         {
             return BadRequest(new { message = "Email already exists." });
         }
 
-        // Hash password
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 11);
 
         var user = new User
@@ -74,9 +83,11 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    // [Authorize(Roles = "admin")]  // ← REMOVED for now
+    [Authorize(Roles = "admin")]  
     public async Task<IActionResult> DeleteUser(int id)
     {
+        // this endpoint allows an admin to delete a user from the system.
+        // It checks if the user exists and removes them from the database.
         var user = await _context.Users.FindAsync(id);
         if (user == null)
         {
@@ -90,9 +101,11 @@ public class UsersController : ControllerBase
     }
 }
 
-// DTOs remain the same
 public class UserResponse
 {
+    // this class represents the response model for user data returned by the API.
+    // It includes the user's ID, name, email, role, and creation date.
+    // Note: PasswordHash is not included in the response for security reasons.
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
@@ -102,6 +115,8 @@ public class UserResponse
 
 public class CreateUserRequest
 {
+    // this class represents the request model for creating a new user.
+    
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;

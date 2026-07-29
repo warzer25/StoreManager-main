@@ -1,5 +1,6 @@
 ﻿namespace StoreManager.Web.Models;
-
+// This class represents a user in the store management system.
+// It contains properties for the user's ID, name, email, role, and creation date.
 public class User
 {
     public int Id { get; set; }

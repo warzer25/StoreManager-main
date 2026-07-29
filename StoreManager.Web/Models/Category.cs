@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace StoreManager.Web.Models;
-
+//this class represents a category in the store management system.
 public class Category
 {
     public int Id { get; set; }

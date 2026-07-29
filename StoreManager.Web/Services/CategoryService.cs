@@ -1,10 +1,16 @@
 using System.Net.Http.Json;
 using StoreManager.Web.Models;
-//hi
+
 namespace StoreManager.Web.Services;
 
 public class CategoryService(HttpClient http)
 {
+    // This service will handle CRUD operations for categories in the application.
+    // It will communicate with the backend API to perform create, read, update, and delete operations for categories.
+    // The service will use an HttpClient to send requests to the backend API, and it will return the results of the operations as Category objects or lists of Category objects.
+    // The service will be registered as a singleton in the dependency injection container, so it will be available throughout the application.
+    // The service will also provide a method to search for categories by name, which will send a GET request to the backend API with a query parameter for the search term.
+    // The service will return the results of the search as a list of Category objects.
     private const string BasePath = "api/categories";
 
     public async Task<List<Category>> GetAllAsync(string? term = null)

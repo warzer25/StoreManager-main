@@ -1,11 +1,20 @@
 ﻿@page "/users"
 @using MudBlazor
+@using StoreManager.Web.Services
 @using StoreManager.Web.Models
-@inject StoreManager.Web.Services.UserService UserService
+@inject UserService UserService
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+
+@if (!AuthService.IsAdmin)
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4">
+        You do not have permission to view this page.
+    </MudAlert>
+    return;
+}
 
 @if (!AuthService.IsAuthenticated)
 {
