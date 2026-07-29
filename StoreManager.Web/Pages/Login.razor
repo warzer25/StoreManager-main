@@ -57,7 +57,9 @@
             var success = await AuthService.LoginAsync(email, password);
             if (success)
             {
-                Navigation.NavigateTo("/", true);
+                // Redirect based on role, no force reload!
+                var targetUrl = AuthService.IsAdmin ? "/" : "/pos";
+                Navigation.NavigateTo(targetUrl);  // <-- No "true" parameter
             }
             else
             {

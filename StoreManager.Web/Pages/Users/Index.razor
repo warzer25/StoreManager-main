@@ -1,0 +1,148 @@
+﻿@page "/users"
+@using MudBlazor
+@using StoreManager.Web.Models
+@inject StoreManager.Web.Services.UserService UserService
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+@if (!AuthService.IsAuthenticated)
+{
+    Navigation.NavigateTo("/login", true);
+    return;
+}
+
+<PageTitle>Users · StoreManager</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h4">Users Management</MudText>
+    @if (AuthService.IsAdmin)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@OpenCreateDialog">
+            New User
+        </MudButton>
+    }
+</MudStack>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @_error
+        <MudButton Color="Color.Inherit" Size="Size.Small" OnClick="LoadAsync">Retry</MudButton>
+    </MudAlert>
+}
+
+<MudTable Items="_users" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2"
+          Loading="_loading" LoadingProgressColor="Color.Primary">
+    <HeaderContent>
+        <MudTh>ID</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh>Role</MudTh>
+        <MudTh>Created At</MudTh>
+        <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="ID">@context.Id</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Email">@context.Email</MudTd>
+        <MudTd DataLabel="Role">
+            <MudChip T="string" Size="Size.Small" Color="@(context.Role == "admin" ? Color.Primary : Color.Secondary)">
+                @context.Role
+            </MudChip>
+        </MudTd>
+        <MudTd DataLabel="Created At">@context.CreatedAt.ToString("yyyy-MM-dd HH:mm")</MudTd>
+        <MudTd DataLabel="Actions" Style="text-align:right">
+            @if (AuthService.IsAdmin)
+            {
+                <MudTooltip Text="Delete">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="@(() => DeleteUserAsync(context))" />
+                </MudTooltip>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Read only</MudText>
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="my-4">No users found.</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<StoreManager.Web.Models.User> _users = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            // Explicitly map the service users to model users if needed
+            var serviceUsers = await UserService.GetAllAsync();
+            _users = serviceUsers.Select(u => new StoreManager.Web.Models.User
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                Role = u.Role
+                // CreatedAt = u.CreatedAt // <-- Removed this line
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load users. Is the API running? ({ex.Message})";
+            _users = new();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters();
+        var dialog = await DialogService.ShowAsync<CreateUserDialog>("Create New User", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadAsync();
+            Snackbar.Add("User created successfully!", Severity.Success);
+        }
+    }
+
+    private async Task DeleteUserAsync(StoreManager.Web.Models.User user)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete User",
+            $"Delete \"{user.Name}\" ({user.Email})? This cannot be undone.",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await UserService.DeleteAsync(user.Id);
+            _users.Remove(user);
+            Snackbar.Add($"Deleted \"{user.Name}\".", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+}

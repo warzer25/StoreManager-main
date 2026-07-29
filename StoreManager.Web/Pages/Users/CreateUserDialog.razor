@@ -1,0 +1,127 @@
+﻿@using MudBlazor
+@using StoreManager.Web.Services
+@using StoreManager.Web.Models
+@inject UserService UserService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h5">Create New User</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_request.Name"
+                          Label="Full Name"
+                          Required="true"
+                          Error="@_errors.ContainsKey(nameof(_request.Name))"
+                          ErrorText="@_errors.GetValueOrDefault(nameof(_request.Name))"
+                          Class="mb-4" />
+
+            <MudTextField @bind-Value="_request.Email"
+                          Label="Email"
+                          InputType="InputType.Email"
+                          Required="true"
+                          Error="@_errors.ContainsKey(nameof(_request.Email))"
+                          ErrorText="@_errors.GetValueOrDefault(nameof(_request.Email))"
+                          Class="mb-4" />
+
+            <MudTextField @bind-Value="_request.Password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Required="true"
+                          HelperText="Minimum 6 characters"
+                          Error="@_errors.ContainsKey(nameof(_request.Password))"
+                          ErrorText="@_errors.GetValueOrDefault(nameof(_request.Password))"
+                          Class="mb-4" />
+
+            <MudSelect T="string" Label="Role" Required="true"
+                       @bind-Value="_request.Role"
+                       Error="@_errors.ContainsKey(nameof(_request.Role))"
+                       ErrorText="@_errors.GetValueOrDefault(nameof(_request.Role))"
+                       Class="mb-4">
+                <MudSelectItem Value=@("cashier")>Cashier</MudSelectItem>
+                <MudSelectItem Value=@("admin")>Admin</MudSelectItem>
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="@_isSubmitting">
+            @if (_isSubmitting)
+            {
+                <span>Creating...</span>
+            }
+            else
+            {
+                <span>Create</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudForm _form = default!;
+    private CreateUserRequest _request = new();
+    private bool _isSubmitting = false;
+    private Dictionary<string, string> _errors = new();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        _errors.Clear();
+
+        // Manual validation
+        if (string.IsNullOrWhiteSpace(_request.Name))
+            _errors[nameof(_request.Name)] = "Name is required.";
+        if (string.IsNullOrWhiteSpace(_request.Email) || !IsValidEmail(_request.Email))
+            _errors[nameof(_request.Email)] = "Valid email is required.";
+        if (string.IsNullOrWhiteSpace(_request.Password) || _request.Password.Length < 6)
+            _errors[nameof(_request.Password)] = "Password must be at least 6 characters.";
+        if (string.IsNullOrWhiteSpace(_request.Role))
+            _errors[nameof(_request.Role)] = "Role is required.";
+
+        if (_errors.Any())
+        {
+            StateHasChanged();
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            var user = await UserService.CreateAsync(_request);
+            if (user != null)
+            {
+                MudDialog.Close(DialogResult.Ok(user));
+            }
+            else
+            {
+                Snackbar.Add("Failed to create user.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

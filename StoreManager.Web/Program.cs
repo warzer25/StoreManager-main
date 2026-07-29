@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components.Web;
+﻿using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using StoreManager.Web;
@@ -9,13 +9,15 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Add HttpClient for API calls
-builder.Services.AddScoped(sp => new HttpClient 
-{ 
-    BaseAddress = new Uri("http://localhost:5136/")  // Your API URL
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri("http://localhost:5136/")
 });
 
-// Register AuthService
+// Register Services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<UserService>();  
 
 builder.Services.AddMudServices();
 
