@@ -23,7 +23,6 @@ builder.Services.AddScoped(sp => new HttpClient
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<UserService>();  
-
 builder.Services.AddMudServices();
 
 await builder.Build().RunAsync();

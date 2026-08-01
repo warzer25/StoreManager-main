@@ -1,4 +1,5 @@
 ﻿@page "/login"
+@layout BlankLayout
 @using StoreManager.Web.Services
 @inject AuthService AuthService
 @inject NavigationManager Navigation
@@ -22,6 +23,11 @@
             <input @bind="password" type="password" class="form-control" placeholder="••••••••" />
         </div>
 
+        <div class="form-group form-check">
+            <input @bind="rememberMe" type="checkbox" class="form-check-input" id="rememberMe" />
+            <label class="form-check-label" for="rememberMe">Remember Me</label>
+        </div>
+
         <button @onclick="HandleLogin" class="btn btn-primary w-100" disabled="@isLoading">
             @if (isLoading)
             {
@@ -40,6 +46,7 @@
     private string password = "";
     private string errorMessage = "";
     private bool isLoading = false;
+    private bool rememberMe = false;  // 👈 New checkbox
 
     private async Task HandleLogin()
     {
@@ -54,12 +61,11 @@
 
         try
         {
-            var success = await AuthService.LoginAsync(email, password);
+            var success = await AuthService.LoginAsync(email, password, rememberMe);
             if (success)
             {
-                // Redirect based on role, no force reload!
                 var targetUrl = AuthService.IsAdmin ? "/" : "/pos";
-                Navigation.NavigateTo(targetUrl);  // <-- No "true" parameter
+                Navigation.NavigateTo(targetUrl);
             }
             else
             {

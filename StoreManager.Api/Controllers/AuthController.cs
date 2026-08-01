@@ -5,13 +5,12 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using BCrypt.Net;
 using StoreManager.Api.Data;
 using StoreManager.Api.Models;
 
 namespace StoreManager.Api.Controllers;
 // This controller handles user authentication, including login and JWT token generation.
-
+// It provides an endpoint for users to log in with their email and password, and returns a JWT token upon successful authentication.
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
@@ -61,7 +60,7 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
-            // 👇 Generate JWT Token
+            // this will Generate JWT Token
             var token = GenerateJwtToken(user);
 
             var response = new LoginResponse
@@ -70,7 +69,7 @@ public class AuthController : ControllerBase
                 Name = user.Name,
                 Email = user.Email,
                 Role = user.Role,
-                Token = token  // 👈 Include token in response
+                Token = token  // Include token in response
             };
 
             _logger.LogInformation("User logged in: {Email} [{Role}]", user.Email, user.Role);

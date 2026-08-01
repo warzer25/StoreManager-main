@@ -6,107 +6,91 @@
 
 <PageTitle>Categories · StoreManager</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-    <MudText Typo="Typo.h4">Categories</MudText>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Add"
-               OnClick="@(() => Navigation.NavigateTo("categories/new"))">
-        New Category
-    </MudButton>
-</MudStack>
+<MudContainer Class="mt-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h4">Categories</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@(() => Navigation.NavigateTo("categories/new"))">
+            New Category
+        </MudButton>
+    </MudStack>
 
-<!-- 👇 NEW: Search bar row -->
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small">
-    <MudTextField @bind-Value="_searchTerm"
-                  Label="Search categories"
-                  Placeholder="Type name or description..."
-                  Adornment="Adornment.Start"
-                  AdornmentIcon="@Icons.Material.Filled.Search"
-                  Immediate="true"
-                  OnKeyUp="@(async (e) => { if (e.Key == "Enter") await PerformSearch(); })"
-                  Style="flex:1; min-width:200px;" />
-    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Search"
-               OnClick="@PerformSearch">
-        Search
-    </MudButton>
-    <MudButton Variant="Variant.Text" Color="Color.Secondary"
-               StartIcon="@Icons.Material.Filled.Clear"
-               OnClick="@ClearSearch"
-               Disabled="@string.IsNullOrWhiteSpace(_searchTerm)">
-        Clear
-    </MudButton>
-</MudStack>
+    <!-- Search bar row -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small">
+        <MudTextField @bind-Value="_searchTerm"
+                      Label="Search categories"
+                      Placeholder="Type name or description..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      OnKeyUp="@(async (e) => { if (e.Key == "Enter") await PerformSearch(); })"
+                      Style="flex:1; min-width:200px;" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Search"
+                   OnClick="@PerformSearch">
+            Search
+        </MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary"
+                   StartIcon="@Icons.Material.Filled.Clear"
+                   OnClick="@ClearSearch"
+                   Disabled="@string.IsNullOrWhiteSpace(_searchTerm)">
+            Clear
+        </MudButton>
+    </MudStack>
 
-@if (_error is not null)
-{
-    <MudAlert Severity="Severity.Error" Class="mb-4"
-              ContentAlignment="HorizontalAlignment.Left">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%">
-            <span>@_error</span>
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_error
             <MudButton Color="Color.Inherit" Size="Size.Small" OnClick="LoadAsync">Retry</MudButton>
-        </MudStack>
-    </MudAlert>
-}
+        </MudAlert>
+    }
 
-<MudTable Items="_categories" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2"
-          Loading="_loading" LoadingProgressColor="Color.Primary">
-    <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Description</MudTh>
-        <MudTh Style="text-align:right">Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Name">
-            <MudText Typo="Typo.body1">@context.Name</MudText>
-        </MudTd>
-        <MudTd DataLabel="Description">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                @(string.IsNullOrWhiteSpace(context.Description) ? "—" : context.Description)
-            </MudText>
-        </MudTd>
-        <MudTd DataLabel="Actions" Style="text-align:right">
-            <MudTooltip Text="Edit">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                               OnClick="@(() => Navigation.NavigateTo($"categories/{context.Id}/edit"))" />
-            </MudTooltip>
-            <MudTooltip Text="Delete">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                               OnClick="@(() => DeleteAsync(context))" />
-            </MudTooltip>
-        </MudTd>
-    </RowTemplate>
-    <NoRecordsContent>
-        @if (_error is null)
-        {
-            <MudText Class="my-4">No categories yet. Click “New Category” to add the first one.</MudText>
-        }
-    </NoRecordsContent>
-</MudTable>
+    <MudTable Items="_categories" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2"
+              Loading="_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh Style="text-align:right">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">
+                <MudText Typo="Typo.body1">@context.Name</MudText>
+            </MudTd>
+            <MudTd DataLabel="Description">
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    @(string.IsNullOrWhiteSpace(context.Description) ? "—" : context.Description)
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Actions" Style="text-align:right">
+                <MudTooltip Text="Edit">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(() => Navigation.NavigateTo($"categories/{context.Id}/edit"))" />
+                </MudTooltip>
+                <MudTooltip Text="Delete">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="@(() => DeleteAsync(context))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (_error is null)
+            {
+                <MudText Class="my-4">No categories yet. Click "New Category" to add the first one.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+</MudContainer>
 
 @code {
-	// this page lists all categories and allows searching, editing, and deleting them.
-	// it uses the CategoryService to fetch data and MudBlazor components for the UI.
-	// it also uses the DialogService to confirm deletions and the Snackbar to show success/error messages.
-    // it uses the NavigationManager to navigate to the form page for creating or editing categories.
-	// it uses a search term to filter categories by name or description.
-	// it uses a loading state to show a progress bar while fetching data.
-	// it uses an error state to show an alert if fetching data fails.
-	// it uses a clear search button to reset the search term and reload all categories.
-	// it uses a perform search button to reload categories with the current search term.
-	// it uses a table to display categories with actions for editing and deleting.
-	// it uses a no records content to show a message if there are no categories.
-	// it uses a page title to show the current page in the browser tab.
-	// it uses a stack layout to arrange elements vertically or horizontally with spacing and alignment.
-
     private List<Category> _categories = new();
     private bool _loading = true;
     private string? _error;
-    private string _searchTerm = ""; // 👈 NEW
+    private string _searchTerm = "";
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
-    // 👇 Modified: passes the search term to the service
     private async Task LoadAsync()
     {
         _loading = true;
@@ -126,13 +110,11 @@
         }
     }
 
-    // 👇 NEW: perform search (just reloads with current term)
     private async Task PerformSearch()
     {
         await LoadAsync();
     }
 
-    // 👇 NEW: clear search and reload all
     private async Task ClearSearch()
     {
         _searchTerm = "";
