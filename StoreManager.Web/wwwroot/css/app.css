@@ -1,103 +1,30 @@
-/* MudBlazor provides the component styling; this file only covers the pre-Blazor
-   loading screen and the framework error bar. */
-
-.valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
-}
-
-.invalid {
-    outline: 1px solid red;
-}
-
-.validation-message {
-    color: red;
-}
-
-#blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-}
-
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
-
-.blazor-error-boundary {
-    background: #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
-}
-
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
-
-.loading-progress {
-    position: relative;
-    display: block;
-    width: 8rem;
-    height: 8rem;
-    margin: 20vh auto 1rem auto;
-}
-
-    .loading-progress circle {
-        fill: none;
-        stroke: #e0e0e0;
-        stroke-width: 0.6rem;
-        transform-origin: 50% 50%;
-        transform: rotate(-90deg);
-    }
-
-        .loading-progress circle:last-child {
-            stroke: #00897B;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
-        }
-
-.loading-progress-text {
-    position: absolute;
-    text-align: center;
-    font-weight: bold;
-    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
-    color: #00897B;
-}
-
-    .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
-    }
-
-/* Login Page */
+/* Login Page - now matching MudBlazor theme */
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #00897B 0%, #004D40 100%);
+    /* Using the app's primary color and a darker shade */
 }
 
 .login-card {
     background: white;
     padding: 2.5rem;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 400px;
+    border: 1px solid #e0e0e0;
 }
 
     .login-card h2 {
         margin-bottom: 1.5rem;
         text-align: center;
-        color: #333;
+        color: #00897B;
+        /* Primary color for heading */
+        font-weight: 500;
+        letter-spacing: 0.5px;
     }
 
     .login-card .form-group {
@@ -117,10 +44,17 @@
         border: 1px solid #ddd;
         border-radius: 6px;
         font-size: 1rem;
+        transition: border-color 0.2s;
     }
 
+        .login-card .form-control:focus {
+            border-color: #00897B;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.15);
+        }
+
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #00897B;
     color: white;
     border: none;
     padding: 0.75rem;
@@ -129,12 +63,41 @@
     font-size: 1rem;
     font-weight: 500;
     width: 100%;
+    transition: background 0.2s, transform 0.1s;
 }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #00796B;
+    }
+
+    .btn-primary:active:not(:disabled) {
+        transform: scale(0.98);
+    }
 
     .btn-primary:disabled {
         opacity: 0.7;
         cursor: not-allowed;
     }
+
+/* Remember me checkbox styling */
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.form-check-input {
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    accent-color: #00897B;
+}
+
+.form-check-label {
+    cursor: pointer;
+    color: #555;
+}
 
 .alert-danger {
     background: #f8d7da;
@@ -145,7 +108,7 @@
     border: 1px solid #f5c6cb;
 }
 
-/* Blank Layout - Full screen, no nav */
+/* Blank Layout - now matching the primary color */
 .blank-layout {
     height: 100vh;
     width: 100vw;
@@ -154,22 +117,5 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Override any default body margins */
-body {
-    margin: 0;
-    padding: 0;
-}
-
-/* Loading spinner */
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
+    background: linear-gradient(135deg, #00897B 0%, #004D40 100%);
 }
