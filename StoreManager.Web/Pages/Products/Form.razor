@@ -1,0 +1,260 @@
+﻿@page "/products/new"
+@page "/products/{id:int}/edit"
+@using MudBlazor
+@using StoreManager.Web.Services
+@using StoreManager.Web.Models
+@inject ProductService ProductService
+@inject CategoryService CategoryService
+@inject AuthService AuthService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+@if (!AuthService.IsAdmin)
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4">
+        You do not have permission to access this page.
+    </MudAlert>
+    return;
+}
+
+<PageTitle>@(IsEditMode ? "Edit Product" : "New Product") · StoreManager</PageTitle>
+
+<MudContainer Class="mt-4">
+    <MudCard Elevation="2">
+        <MudCardContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+                <MudText Typo="Typo.h4">@(IsEditMode ? "Edit Product" : "New Product")</MudText>
+            </MudStack>
+
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+            }
+
+            <MudForm @ref="_form">
+                <!-- Product Name -->
+                <MudTextField @bind-Value="_product.Name"
+                              Label="Product Name"
+                              Required="true"
+                              Class="mb-4" />
+
+                <!-- Category Dropdown -->
+                <MudSelect T="int" Label="Category"
+                           Required="true"
+                           @bind-Value="_product.CategoryId"
+                           Class="mb-4"
+                           AnchorOrigin="Origin.BottomCenter">
+                    @if (_categoriesLoading)
+                    {
+                        <MudSelectItem Value="0">Loading categories...</MudSelectItem>
+                    }
+                    else
+                    {
+                        @foreach (var category in _categories)
+                        {
+                            <MudSelectItem Value="category.Id">@category.Name</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+                <!-- Barcode -->
+                <MudTextField @bind-Value="_product.Barcode"
+                              Label="Barcode (optional)"
+                              Class="mb-4" />
+
+                <!-- Unit -->
+                <MudTextField @bind-Value="_product.Unit"
+                              Label="Unit (e.g., pcs, kg, liter)"
+                              Required="true"
+                              Class="mb-4" />
+
+                <!-- Cost Price -->
+                <MudTextField @bind-Value="_product.CostPrice"
+                              Label="Cost Price"
+                              Format="F2"
+                              Required="true"
+                              Class="mb-4" />
+
+                <!-- Selling Price -->
+                <MudTextField @bind-Value="_product.SellingPrice"
+                              Label="Selling Price"
+                              Format="F2"
+                              Required="true"
+                              Class="mb-4" />
+
+                <!-- Stock Quantity -->
+                <MudTextField @bind-Value="_product.StockQuantity"
+                              Label="Stock Quantity"
+                              InputType="InputType.Number"
+                              Required="true"
+                              Class="mb-4" />
+            </MudForm>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="Cancel">
+                Cancel
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="@_isSubmitting">
+                @if (_isSubmitting)
+                {
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>@(IsEditMode ? "Update" : "Create")</span>
+                }
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool IsEditMode => Id.HasValue && Id.Value > 0;
+
+    private Product _product = new();
+    private List<Category> _categories = new();
+    private bool _categoriesLoading = true;
+    private bool _loading = true;
+    private bool _isSubmitting = false;
+    private string? _error;
+    private MudForm _form = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+        if (IsEditMode)
+        {
+            await LoadProduct();
+        }
+        else
+        {
+            _loading = false;
+            _product = new Product();
+        }
+        _categoriesLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            _categories = await CategoryService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load categories: {ex.Message}";
+        }
+    }
+
+    private async Task LoadProduct()
+    {
+        try
+        {
+            _loading = true;
+            var product = await ProductService.GetByIdAsync(Id!.Value);
+            if (product == null)
+            {
+                _error = "Product not found.";
+                return;
+            }
+            _product = product;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load product: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/products");
+    }
+
+    private async Task Save()
+    {
+        // Manual validation
+        if (string.IsNullOrWhiteSpace(_product.Name))
+        {
+            Snackbar.Add("Product name is required.", Severity.Error);
+            return;
+        }
+        if (_product.CategoryId <= 0)
+        {
+            Snackbar.Add("Please select a category.", Severity.Error);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_product.Unit))
+        {
+            Snackbar.Add("Unit is required.", Severity.Error);
+            return;
+        }
+        if (_product.CostPrice <= 0)
+        {
+            Snackbar.Add("Cost price must be greater than 0.", Severity.Error);
+            return;
+        }
+        if (_product.SellingPrice <= 0)
+        {
+            Snackbar.Add("Selling price must be greater than 0.", Severity.Error);
+            return;
+        }
+        if (_product.StockQuantity < 0)
+        {
+            Snackbar.Add("Stock quantity cannot be negative.", Severity.Error);
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                var request = new UpdateProductRequest
+                {
+                    Id = _product.Id,
+                    CategoryId = _product.CategoryId,
+                    Name = _product.Name,
+                    Barcode = _product.Barcode,
+                    Unit = _product.Unit,
+                    CostPrice = _product.CostPrice,
+                    SellingPrice = _product.SellingPrice,
+                    StockQuantity = _product.StockQuantity
+                };
+                await ProductService.UpdateAsync(request);
+                Snackbar.Add($"Product \"{_product.Name}\" updated!", Severity.Success);
+            }
+            else
+            {
+                var request = new CreateProductRequest
+                {
+                    CategoryId = _product.CategoryId,
+                    Name = _product.Name,
+                    Barcode = _product.Barcode,
+                    Unit = _product.Unit,
+                    CostPrice = _product.CostPrice,
+                    SellingPrice = _product.SellingPrice,
+                    StockQuantity = _product.StockQuantity
+                };
+                await ProductService.CreateAsync(request);
+                Snackbar.Add($"Product \"{_product.Name}\" created!", Severity.Success);
+            }
+            Navigation.NavigateTo("/products");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Save failed: {ex.Message}";
+            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

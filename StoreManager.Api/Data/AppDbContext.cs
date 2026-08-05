@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // It inherits from the DbContext class provided by Entity Framework Core and is configured with options passed in through the constructor.
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Product> Products => Set<Product>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 property.SetColumnName(ToSnakeCase(property.Name));
             }
         }
+
+
+        modelBuilder.Entity<Product>()
+            .Property(p => p.CostPrice)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Product>()
+            .Property(p => p.SellingPrice)
+            .HasPrecision(18, 2);
 
         modelBuilder.Entity<Category>().HasData(
             // this is a seed data for the Category entity,
@@ -57,6 +67,61 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 PasswordHash = "$2b$11$5HgYUs.stb2fg.5cDhrW8u8ze8ZkjXnX0LdbWkfghpulfg/71Xire", // "Cashier123!"
                 Role = "cashier",
                 CreatedAt = DateTime.UtcNow
+            }
+        );
+        // 👇 ADD PRODUCT SEED DATA
+        modelBuilder.Entity<Product>().HasData(
+            new Product
+            {
+                Id = 1,
+                CategoryId = 1,  // Beverages
+                Name = "Cola Can",
+                Barcode = "123456789",
+                Unit = "pcs",
+                CostPrice = 1.50m,
+                SellingPrice = 2.50m,
+                StockQuantity = 45,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
+            },
+            new Product
+            {
+                Id = 2,
+                CategoryId = 2,  // Snacks
+                Name = "Potato Chips",
+                Barcode = "987654321",
+                Unit = "pcs",
+                CostPrice = 1.80m,
+                SellingPrice = 3.00m,
+                StockQuantity = 8,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
+            },
+            new Product
+            {
+                Id = 3,
+                CategoryId = 3,  // Dairy
+                Name = "Milk 1L",
+                Barcode = "456789123",
+                Unit = "liter",
+                CostPrice = 3.00m,
+                SellingPrice = 4.50m,
+                StockQuantity = 12,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
+            },
+            new Product
+            {
+                Id = 4,
+                CategoryId = 4,  // Cleaning
+                Name = "Cleaning Spray",
+                Barcode = "789123456",
+                Unit = "pcs",
+                CostPrice = 4.00m,
+                SellingPrice = 6.00m,
+                StockQuantity = 0,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
             }
         );
     }

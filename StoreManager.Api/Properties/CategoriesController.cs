@@ -1,24 +1,21 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StoreManager.Api.Data;
 using StoreManager.Api.Models;
 
-// this is a minimal API controller for managing categories in the StoreManager application.
-// It provides endpoints for CRUD operations and supports searching categories by name or description.
-
 namespace StoreManager.Api.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "admin")]  // 👈 Only Admin can access categories
 public class CategoriesController(AppDbContext db) : ControllerBase
 {
-    
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Category>>> GetAll([FromQuery] string? term = null)
     {
-        // this is our base query, it will be modified based on the search term if provided
         IQueryable<Category> query = db.Categories;
 
-        
         if (!string.IsNullOrWhiteSpace(term))
         {
             var lowerTerm = term.Trim().ToLower();
@@ -36,7 +33,6 @@ public class CategoriesController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Category>> GetById(int id)
     {
-        // Use FindAsync to retrieve the category by its primary key (id)
         var category = await db.Categories.FindAsync(id);
 
         if (category is null)
@@ -50,7 +46,6 @@ public class CategoriesController(AppDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Category>> Create(Category category)
     {
-        // Ensure the Id is set to 0 so that EF Core treats this as a new entity
         category.Id = 0;
         db.Categories.Add(category);
         await db.SaveChangesAsync();
@@ -61,7 +56,6 @@ public class CategoriesController(AppDbContext db) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, Category category)
     {
-        // Check if the route id matches the category id in the body
         if (id != category.Id)
         {
             return BadRequest("Route id and body id do not match.");
@@ -83,7 +77,6 @@ public class CategoriesController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        // Use FindAsync to retrieve the category by its primary key (id)
         var category = await db.Categories.FindAsync(id);
         if (category is null)
         {

@@ -9,18 +9,18 @@
 
     @if (AuthService.IsAuthenticated)
     {
-        <MudNavLink Href="categories" Icon="Icons.Material.Filled.Category">
-            Categories
-        </MudNavLink>
-
         @if (AuthService.IsAdmin)
         {
-            <div class="nav-item px-3">
-                <MudNavLink Href="products" Icon="Icons.Material.Filled.Inventory">
-                    Products
-                </MudNavLink>
-            </div>
-            
+            @* 👇 Categories - Admin only *@
+            <MudNavLink Href="categories" Icon="Icons.Material.Filled.Category">
+                Categories
+            </MudNavLink>
+
+            @* 👇 Products - Admin only *@
+            <MudNavLink Href="products" Icon="Icons.Material.Filled.Inventory">
+                Products
+            </MudNavLink>
+
             <MudNavLink Href="orders" Icon="Icons.Material.Filled.ShoppingCart">
                 Orders
             </MudNavLink>

@@ -1,0 +1,147 @@
+﻿@page "/products"
+@using MudBlazor
+@using StoreManager.Web.Services
+@using StoreManager.Web.Models
+@inject ProductService ProductService
+@inject AuthService AuthService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+@if (!AuthService.IsAdmin)
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4">
+        You do not have permission to view this page.
+    </MudAlert>
+    return;
+}
+
+<PageTitle>Products · StoreManager</PageTitle>
+
+<MudContainer Class="mt-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h4">Products</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@(() => Navigation.NavigateTo("products/new"))">
+            New Product
+        </MudButton>
+    </MudStack>
+
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_error
+            <MudButton Color="Color.Inherit" Size="Size.Small" OnClick="LoadAsync">Retry</MudButton>
+        </MudAlert>
+    }
+
+    <MudTable Items="_products" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2"
+              Loading="_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>Unit</MudTh>
+            <MudTh Style="text-align:right">Price</MudTh>
+            <MudTh Style="text-align:center">Stock</MudTh>
+            <MudTh Style="text-align:right">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Category">@context.CategoryName</MudTd>
+            <MudTd DataLabel="Unit">@context.Unit</MudTd>
+            <MudTd DataLabel="Price" Style="text-align:right">
+                @context.SellingPrice.ToString("C")
+            </MudTd>
+            <MudTd DataLabel="Stock" Style="text-align:center">
+                @if (context.StockQuantity <= 0)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                        @context.StockQuantity (Out of Stock!)
+                    </MudChip>
+                }
+                else if (context.StockQuantity <= LowStockThreshold)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">
+                        @context.StockQuantity (Low Stock)
+                    </MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">
+                        @context.StockQuantity
+                    </MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Actions" Style="text-align:right">
+                <MudTooltip Text="Edit">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(() => Navigation.NavigateTo($"products/{context.Id}/edit"))" />
+                </MudTooltip>
+                <MudTooltip Text="Delete">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="@(() => DeleteAsync(context))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (_error is null)
+            {
+                <MudText Class="my-4">No products yet. Click "New Product" to add the first one.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private const int LowStockThreshold = 10;  // 👈 Single source of truth
+
+    private List<Product> _products = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _products = await ProductService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load products. Is the API running? ({ex.Message})";
+            _products = new();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteAsync(Product product)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete Product",
+            $"Delete \"{product.Name}\"? This cannot be undone.",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await ProductService.DeleteAsync(product.Id);
+            _products.Remove(product);
+            Snackbar.Add($"Deleted \"{product.Name}\".", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+}
