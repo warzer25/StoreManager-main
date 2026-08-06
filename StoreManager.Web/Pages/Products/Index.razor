@@ -15,7 +15,6 @@
     </MudAlert>
     return;
 }
-
 <PageTitle>Products · StoreManager</PageTitle>
 
 <MudContainer Class="mt-4">
@@ -128,11 +127,14 @@
 
     private async Task LoadAsync()
     {
+
+		// Pass the search term to the ProductService
+		// This will allow the API to filter products based on the search term
         _loading = true;
         _error = null;
         try
         {
-            _products = await ProductService.GetAllAsync(_searchTerm);  // 👈 Pass search term
+            _products = await ProductService.GetAllAsync(_searchTerm);  // Pass search term
         }
         catch (Exception ex)
         {
