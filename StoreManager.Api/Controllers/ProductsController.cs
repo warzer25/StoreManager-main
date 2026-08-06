@@ -8,18 +8,47 @@ namespace StoreManager.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "admin")]  // 👈 Only Admin can access products
+[Authorize(Roles = "admin")]
 public class ProductsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Roles = "admin")]  // 👈 Only Admin can view list
-    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll()
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll([FromQuery] int? categoryId = null,[FromQuery] string? term = null)
     {
-        var products = await db.Products
+        // this query will include the category information for each product
+        // and will filter by category if provided, and search by term if provided
+        // the search will be case-insensitive and will match the term against the product name, barcode, or category name
+        var query = db.Products
             .Include(p => p.Category)
+            .AsQueryable();
+        // Filter by category if provided
+        if (categoryId.HasValue && categoryId.Value > 0)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        // Search by term (name, barcode, or category name)
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            var lowerTerm = term.Trim().ToLower();
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(lowerTerm) ||
+                (p.Barcode != null && p.Barcode.ToLower().Contains(lowerTerm)) ||
+                (p.Category != null && p.Category.Name.ToLower().Contains(lowerTerm))
+            );
+        }
+
+        var products = await query
             .OrderBy(p => p.Name)
             .Select(p => new ProductResponse
             {
+                // Map the product entity to the response DTO
+                // If the category is null, we will return "Unknown" as the category name
+                // This can happen if the category was deleted but the product still exists
+                // We can also consider returning a 404 if the category is null, but for now we will return "Unknown"
+                // This is a design decision and can be changed later if needed
+                // p.id is the primary key of the product, and p.CategoryId is the foreign key to the category
+                // the p. is the navigation property to the category, which we included in the query 
                 Id = p.Id,
                 CategoryId = p.CategoryId,
                 CategoryName = p.Category != null ? p.Category.Name : "Unknown",
@@ -38,7 +67,7 @@ public class ProductsController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "admin")]  // 👈 Only Admin can view single product
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ProductResponse>> GetById(int id)
     {
         var product = await db.Products
@@ -67,7 +96,7 @@ public class ProductsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "admin")]  // ✅ Already correct
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ProductResponse>> Create(CreateProductRequest request)
     {
         var product = new Product
@@ -104,7 +133,7 @@ public class ProductsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "admin")]  // ✅ Already correct
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(int id, UpdateProductRequest request)
     {
         if (id != request.Id)
@@ -133,7 +162,7 @@ public class ProductsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "admin")]  // ✅ Already correct
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var product = await db.Products.FindAsync(id);

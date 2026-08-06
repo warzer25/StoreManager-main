@@ -7,15 +7,46 @@ public class ProductService(HttpClient http)
 {
     private const string BasePath = "api/products";
 
-    public async Task<List<Product>> GetAllAsync()
+    public async Task<List<Product>> GetAllAsync(string? term = null)
     {
         try
         {
-            return await http.GetFromJsonAsync<List<Product>>(BasePath) ?? new List<Product>();
+            var url = BasePath;
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                queryParams.Add($"term={Uri.EscapeDataString(term)}");
+            }
+
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            return await http.GetFromJsonAsync<List<Product>>(url) ?? new List<Product>();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading products: {ex.Message}");
+            throw;
+        }
+    }
+    public async Task<List<Product>> GetByCategoryAsync(int categoryId)
+    {
+        // Load products by category ID
+        // This method fetches products that belong to a specific category.
+        // It constructs the request URL with the categoryId as a query parameter and makes an HTTP GET request to retrieve the products.
+        // If the request is successful, it returns the list of products; otherwise, it logs the error and rethrows the exception.
+        // --
+        // await is used to asynchronously wait for the HTTP request to complete, allowing the application to remain responsive during the operation.
+        try
+        {
+            return await http.GetFromJsonAsync<List<Product>>($"{BasePath}?categoryId={categoryId}") ?? new List<Product>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products for category {categoryId}: {ex.Message}");
             throw;
         }
     }

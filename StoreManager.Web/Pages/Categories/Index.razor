@@ -1,5 +1,9 @@
 @page "/categories"
+@using MudBlazor
+@using StoreManager.Web.Services
+@using StoreManager.Web.Models
 @inject CategoryService CategoryService
+@inject ProductService ProductService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
@@ -16,7 +20,7 @@
         </MudButton>
     </MudStack>
 
-    <!-- Search bar row -->
+    <!-- Search bar -->
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small">
         <MudTextField @bind-Value="_searchTerm"
                       Label="Search categories"
@@ -47,45 +51,114 @@
         </MudAlert>
     }
 
-    <MudTable Items="_categories" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="2"
-              Loading="_loading" LoadingProgressColor="Color.Primary">
-        <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Description</MudTh>
-            <MudTh Style="text-align:right">Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Name">
-                <MudText Typo="Typo.body1">@context.Name</MudText>
-            </MudTd>
-            <MudTd DataLabel="Description">
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                    @(string.IsNullOrWhiteSpace(context.Description) ? "—" : context.Description)
-                </MudText>
-            </MudTd>
-            <MudTd DataLabel="Actions" Style="text-align:right">
-                <MudTooltip Text="Edit">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                   OnClick="@(() => Navigation.NavigateTo($"categories/{context.Id}/edit"))" />
-                </MudTooltip>
-                <MudTooltip Text="Delete">
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                   OnClick="@(() => DeleteAsync(context))" />
-                </MudTooltip>
-            </MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            @if (_error is null)
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_categories.Count == 0)
+    {
+        <MudText Class="my-4">No categories found.</MudText>
+    }
+    else
+    {
+        <MudCard Elevation="0">
+            @foreach (var category in _categories)
             {
-                <MudText Class="my-4">No categories yet. Click "New Category" to add the first one.</MudText>
+                var categoryId = category.Id;
+                var isExpanded = _expandedCategoryId == categoryId;
+                var products = _categoryProducts.GetValueOrDefault(categoryId) ?? new List<Product>();
+
+                <MudCard Class="mb-2" Style="border: 1px solid #e0e0e0; border-radius: 8px;">
+                    <MudCardContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-0">
+                            <div>
+                                <MudText Typo="Typo.body1" Style="font-weight:500; cursor:pointer;"
+                                        @onclick="() => ToggleCategory(categoryId)">
+                                    @category.Name
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@category.Description</MudText>
+                            </div>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Gap="Gap.Small">
+                                <MudIconButton Icon="@(isExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                               Size="Size.Small"
+                                               OnClick="() => ToggleCategory(categoryId)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                               OnClick="@( () => Navigation.NavigateTo($"categories/{category.Id}/edit") )" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                               OnClick="() => DeleteAsync(category)" />
+                            </MudStack>
+                        </MudStack>
+
+                        @if (isExpanded)
+                        {
+                            <MudDivider Class="my-2" />
+                            <MudContainer Class="pl-6">
+                                @if (_loadingProducts && _expandedCategoryId == categoryId)
+                                {
+                                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                                }
+                                else
+                                {
+                                    if (products.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">No products in this category.</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudTable Items="products" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0" Dense="true">
+                                            <HeaderContent>
+                                                <MudTh>Name</MudTh>
+                                                <MudTh>Barcode</MudTh>
+                                                <MudTh>Unit</MudTh>
+                                                <MudTh Style="text-align:right">Price</MudTh>
+                                                <MudTh Style="text-align:center">Stock</MudTh>
+                                            </HeaderContent>
+                                            <RowTemplate>
+                                                <MudTd DataLabel="Name">@context.Name</MudTd>
+                                                <MudTd DataLabel="Barcode">@(string.IsNullOrEmpty(context.Barcode) ? "—" : context.Barcode)</MudTd>
+                                                <MudTd DataLabel="Unit">@context.Unit</MudTd>
+                                                <MudTd DataLabel="Price" Style="text-align:right">
+                                                    @context.SellingPrice.ToString("C")
+                                                </MudTd>
+                                                <MudTd DataLabel="Stock" Style="text-align:center">
+                                                    @if (context.StockQuantity <= 0)
+                                                    {
+                                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                                                            @context.StockQuantity (Out of Stock!)
+                                                        </MudChip>
+                                                    }
+                                                    else if (context.StockQuantity <= LowStockThreshold)
+                                                    {
+                                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">
+                                                            @context.StockQuantity (Low Stock)
+                                                        </MudChip>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudText Typo="Typo.body2">@context.StockQuantity</MudText>
+                                                    }
+                                                </MudTd>
+                                            </RowTemplate>
+                                        </MudTable>
+                                    }
+                                }
+                            </MudContainer>
+                        }
+                    </MudCardContent>
+                </MudCard>
             }
-        </NoRecordsContent>
-    </MudTable>
+        </MudCard>
+    }
 </MudContainer>
 
 @code {
+    private const int LowStockThreshold = 10;
+
     private List<Category> _categories = new();
+    private Dictionary<int, List<Product>> _categoryProducts = new();
+    private int? _expandedCategoryId = null;
     private bool _loading = true;
+    private bool _loadingProducts = false;
     private string? _error;
     private string _searchTerm = "";
 
@@ -98,6 +171,8 @@
         try
         {
             _categories = await CategoryService.GetAllAsync(_searchTerm);
+            _expandedCategoryId = null;
+            _categoryProducts.Clear();
         }
         catch (Exception ex)
         {
@@ -121,6 +196,35 @@
         await LoadAsync();
     }
 
+    private async Task ToggleCategory(int categoryId)
+    {
+        if (_expandedCategoryId == categoryId)
+        {
+            _expandedCategoryId = null;
+            return;
+        }
+
+        _expandedCategoryId = categoryId;
+        _loadingProducts = true;
+        StateHasChanged();
+
+        try
+        {
+            var products = await ProductService.GetByCategoryAsync(categoryId);
+            _categoryProducts[categoryId] = products;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load products: {ex.Message}", Severity.Error);
+            _categoryProducts[categoryId] = new List<Product>();
+        }
+        finally
+        {
+            _loadingProducts = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task DeleteAsync(Category category)
     {
         var confirmed = await DialogService.ShowMessageBoxAsync(
@@ -137,6 +241,11 @@
         {
             await CategoryService.DeleteAsync(category.Id);
             _categories.Remove(category);
+            _categoryProducts.Remove(category.Id);
+            if (_expandedCategoryId == category.Id)
+            {
+                _expandedCategoryId = null;
+            }
             Snackbar.Add($"Deleted \"{category.Name}\".", Severity.Success);
         }
         catch (Exception ex)

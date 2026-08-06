@@ -28,6 +28,29 @@
         </MudButton>
     </MudStack>
 
+    <!-- 👇 SEARCH BAR -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small">
+        <MudTextField @bind-Value="_searchTerm"
+                      Label="Search products"
+                      Placeholder="Type name, barcode, or category..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      OnKeyUp="@(async (e) => { if (e.Key == "Enter") await PerformSearch(); })"
+                      Style="flex:1; min-width:200px;" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Search"
+                   OnClick="@PerformSearch">
+            Search
+        </MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary"
+                   StartIcon="@Icons.Material.Filled.Clear"
+                   OnClick="@ClearSearch"
+                   Disabled="@string.IsNullOrWhiteSpace(_searchTerm)">
+            Clear
+        </MudButton>
+    </MudStack>
+
     @if (_error is not null)
     {
         <MudAlert Severity="Severity.Error" Class="mb-4">
@@ -41,6 +64,7 @@
         <HeaderContent>
             <MudTh>Name</MudTh>
             <MudTh>Category</MudTh>
+            <MudTh>Barcode</MudTh>
             <MudTh>Unit</MudTh>
             <MudTh Style="text-align:right">Price</MudTh>
             <MudTh Style="text-align:center">Stock</MudTh>
@@ -49,6 +73,7 @@
         <RowTemplate>
             <MudTd DataLabel="Name">@context.Name</MudTd>
             <MudTd DataLabel="Category">@context.CategoryName</MudTd>
+            <MudTd DataLabel="Barcode">@(string.IsNullOrEmpty(context.Barcode) ? "—" : context.Barcode)</MudTd>
             <MudTd DataLabel="Unit">@context.Unit</MudTd>
             <MudTd DataLabel="Price" Style="text-align:right">
                 @context.SellingPrice.ToString("C")
@@ -68,9 +93,7 @@
                 }
                 else
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">
-                        @context.StockQuantity
-                    </MudChip>
+                    <MudText Typo="Typo.body2">@context.StockQuantity</MudText>
                 }
             </MudTd>
             <MudTd DataLabel="Actions" Style="text-align:right">
@@ -87,18 +110,19 @@
         <NoRecordsContent>
             @if (_error is null)
             {
-                <MudText Class="my-4">No products yet. Click "New Product" to add the first one.</MudText>
+                <MudText Class="my-4">No products found.</MudText>
             }
         </NoRecordsContent>
     </MudTable>
 </MudContainer>
 
 @code {
-    private const int LowStockThreshold = 10;  // 👈 Single source of truth
+    private const int LowStockThreshold = 10;
 
     private List<Product> _products = new();
     private bool _loading = true;
     private string? _error;
+    private string _searchTerm = "";  // 👈 Search term state
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -108,7 +132,7 @@
         _error = null;
         try
         {
-            _products = await ProductService.GetAllAsync();
+            _products = await ProductService.GetAllAsync(_searchTerm);  // 👈 Pass search term
         }
         catch (Exception ex)
         {
@@ -119,6 +143,18 @@
         {
             _loading = false;
         }
+    }
+
+    // 👇 Search methods
+    private async Task PerformSearch()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ClearSearch()
+    {
+        _searchTerm = "";
+        await LoadAsync();
     }
 
     private async Task DeleteAsync(Product product)
