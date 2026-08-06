@@ -6,13 +6,18 @@ using StoreManager.Api.Models;
 
 namespace StoreManager.Api.Controllers;
 
+
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "admin")]
+
+
 public class ProductsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "admin")]
+
+    // This endpoint retrieves a list of products, optionally filtered by category ID and/or a search term.
     public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll([FromQuery] int? categoryId = null,[FromQuery] string? term = null)
     {
         // this query will include the category information for each product
@@ -23,6 +28,7 @@ public class ProductsController(AppDbContext db) : ControllerBase
             .AsQueryable();
         // Filter by category if provided
         if (categoryId.HasValue && categoryId.Value > 0)
+        // Only filter by category if the categoryId is greater than 0
         {
             query = query.Where(p => p.CategoryId == categoryId.Value);
         }
@@ -30,6 +36,8 @@ public class ProductsController(AppDbContext db) : ControllerBase
         // Search by term (name, barcode, or category name)
         if (!string.IsNullOrWhiteSpace(term))
         {
+
+            // The search term is trimmed and converted to lower case for case-insensitive comparison
             var lowerTerm = term.Trim().ToLower();
             query = query.Where(p =>
                 p.Name.ToLower().Contains(lowerTerm) ||
@@ -37,7 +45,7 @@ public class ProductsController(AppDbContext db) : ControllerBase
                 (p.Category != null && p.Category.Name.ToLower().Contains(lowerTerm))
             );
         }
-
+        // Order the results by product name and project to ProductResponse DTO
         var products = await query
             .OrderBy(p => p.Name)
             .Select(p => new ProductResponse
@@ -68,17 +76,22 @@ public class ProductsController(AppDbContext db) : ControllerBase
 
     [HttpGet("{id:int}")]
     [Authorize(Roles = "admin")]
+
+    // This endpoint retrieves a single product by its ID, including its category information.
     public async Task<ActionResult<ProductResponse>> GetById(int id)
     {
         var product = await db.Products
             .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == id);
 
+        // If the product is not found, return a 404 Not Found response
+
         if (product is null)
         {
             return NotFound();
         }
 
+        // Map the product entity to the response DTO and return it
         return Ok(new ProductResponse
         {
             Id = product.Id,
@@ -97,8 +110,12 @@ public class ProductsController(AppDbContext db) : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "admin")]
+
+    // This endpoint creates a new product based on the provided request data. It returns the created product with its ID and category information.
     public async Task<ActionResult<ProductResponse>> Create(CreateProductRequest request)
     {
+
+        // Check if the category exists before creating the product
         var product = new Product
         {
             CategoryId = request.CategoryId,
@@ -111,6 +128,8 @@ public class ProductsController(AppDbContext db) : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
+
+        // Add the new product to the database and save changes
         db.Products.Add(product);
         await db.SaveChangesAsync();
 
@@ -134,19 +153,24 @@ public class ProductsController(AppDbContext db) : ControllerBase
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = "admin")]
+
+    // This endpoint updates an existing product based on the provided ID and request data. It returns a 204 No Content response if the update is successful, or appropriate error responses if the product is not found or if the route ID and body ID do not match.
     public async Task<IActionResult> Update(int id, UpdateProductRequest request)
     {
+
+        // Check if the route ID and body ID match to ensure data integrity
         if (id != request.Id)
         {
             return BadRequest("Route id and body id do not match.");
         }
-
+        // Find the existing product in the database by its ID
         var existing = await db.Products.FindAsync(id);
         if (existing is null)
         {
             return NotFound();
         }
 
+        // Update the existing product's properties with the new values from the request
         existing.CategoryId = request.CategoryId;
         existing.Name = request.Name;
         existing.Barcode = request.Barcode;
@@ -163,9 +187,12 @@ public class ProductsController(AppDbContext db) : ControllerBase
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "admin")]
+
+    //  This endpoint deletes an existing product based on the provided ID. It returns a 204 No Content response if the deletion is successful, or a 404 Not Found response if the product does not exist.
     public async Task<IActionResult> Delete(int id)
     {
         var product = await db.Products.FindAsync(id);
+        // If the product is not found, return a 404 Not Found response
         if (product is null)
         {
             return NotFound();

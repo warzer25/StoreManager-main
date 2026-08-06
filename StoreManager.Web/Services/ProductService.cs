@@ -6,18 +6,22 @@ namespace StoreManager.Web.Services;
 public class ProductService(HttpClient http)
 {
     private const string BasePath = "api/products";
-
+    // this service class provides methods to interact with the product-related API endpoints.
     public async Task<List<Product>> GetAllAsync(string? term = null)
     {
+        // Load all products, optionally filtered by a search term
         try
         {
             var url = BasePath;
             var queryParams = new List<string>();
+            // If a search term is provided, add it as a query parameter to the request URL.
 
             if (!string.IsNullOrWhiteSpace(term))
             {
                 queryParams.Add($"term={Uri.EscapeDataString(term)}");
             }
+
+            // If there are any query parameters, append them to the URL.
 
             if (queryParams.Any())
             {
@@ -51,6 +55,7 @@ public class ProductService(HttpClient http)
         }
     }
 
+    // Load a single product by its ID
     public async Task<Product?> GetByIdAsync(int id)
     {
         try
@@ -64,6 +69,7 @@ public class ProductService(HttpClient http)
         }
     }
 
+    // Create a new product
     public async Task<Product?> CreateAsync(CreateProductRequest request)
     {
         try
@@ -79,6 +85,8 @@ public class ProductService(HttpClient http)
         }
     }
 
+
+    // Update an existing product
     public async Task UpdateAsync(UpdateProductRequest request)
     {
         try
@@ -93,8 +101,11 @@ public class ProductService(HttpClient http)
         }
     }
 
+
     public async Task DeleteAsync(int id)
     {
+
+        // Delete a product by its ID
         try
         {
             var response = await http.DeleteAsync($"{BasePath}/{id}");
