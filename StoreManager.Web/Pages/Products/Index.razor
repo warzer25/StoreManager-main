@@ -3,6 +3,7 @@
 @using StoreManager.Web.Services
 @using StoreManager.Web.Models
 @inject ProductService ProductService
+@inject CategoryService CategoryService
 @inject AuthService AuthService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -15,6 +16,7 @@
     </MudAlert>
     return;
 }
+
 <PageTitle>Products · StoreManager</PageTitle>
 
 <MudContainer Class="mt-4">
@@ -27,8 +29,32 @@
         </MudButton>
     </MudStack>
 
-    <!-- 👇 SEARCH BAR -->
-    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small">
+    <!-- 👇 FILTERS ROW -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Gap="Gap.Small" Wrap="Wrap.Wrap">
+        <!-- Category Dropdown -->
+        <MudSelect T="int?" Label="Category"
+                   @bind-Value="_selectedCategoryId"
+                   Style="min-width:150px;"
+                   AnchorOrigin="Origin.BottomCenter">
+            <MudSelectItem T="int?" Value="@(null)">All Categories</MudSelectItem>
+            @foreach (var category in _categories)
+            {
+                <MudSelectItem T="int?" Value="@(category.Id)">@category.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+        <!-- Stock Status Dropdown -->
+        <MudSelect T="string" Label="Stock Status"
+                   @bind-Value="_stockFilter"
+                   Style="min-width:150px;"
+                   AnchorOrigin="Origin.BottomCenter">
+            <MudSelectItem T="string" Value="@("all")">All</MudSelectItem>
+            <MudSelectItem T="string" Value="@("instock")">In Stock (&gt;10)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("lowstock")">Low Stock (1-10)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("outofstock")">Out of Stock</MudSelectItem>
+        </MudSelect>
+
+        <!-- Search Bar -->
         <MudTextField @bind-Value="_searchTerm"
                       Label="Search products"
                       Placeholder="Type name, barcode, or category..."
@@ -37,16 +63,18 @@
                       Immediate="true"
                       OnKeyUp="@(async (e) => { if (e.Key == "Enter") await PerformSearch(); })"
                       Style="flex:1; min-width:200px;" />
+
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Search"
                    OnClick="@PerformSearch">
             Search
         </MudButton>
+
         <MudButton Variant="Variant.Text" Color="Color.Secondary"
                    StartIcon="@Icons.Material.Filled.Clear"
-                   OnClick="@ClearSearch"
-                   Disabled="@string.IsNullOrWhiteSpace(_searchTerm)">
-            Clear
+                   OnClick="@ClearFilters"
+                   Disabled="@IsClearDisabled">
+            Clear All
         </MudButton>
     </MudStack>
 
@@ -119,22 +147,41 @@
     private const int LowStockThreshold = 10;
 
     private List<Product> _products = new();
+    private List<Category> _categories = new();
     private bool _loading = true;
     private string? _error;
-    private string _searchTerm = "";  // 👈 Search term state
+    private string _searchTerm = "";
+    private int? _selectedCategoryId = null;
+    private string _stockFilter = "all";
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private bool IsClearDisabled => string.IsNullOrWhiteSpace(_searchTerm) && !_selectedCategoryId.HasValue && _stockFilter == "all";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+        await LoadAsync();
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            _categories = await CategoryService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load categories: {ex.Message}", Severity.Error);
+            _categories = new();
+        }
+    }
 
     private async Task LoadAsync()
     {
-
-		// Pass the search term to the ProductService
-		// This will allow the API to filter products based on the search term
         _loading = true;
         _error = null;
         try
         {
-            _products = await ProductService.GetAllAsync(_searchTerm);  // Pass search term
+            _products = await ProductService.GetAllAsync(_searchTerm, _selectedCategoryId, _stockFilter);
         }
         catch (Exception ex)
         {
@@ -147,15 +194,16 @@
         }
     }
 
-    // 👇 Search methods
     private async Task PerformSearch()
     {
         await LoadAsync();
     }
 
-    private async Task ClearSearch()
+    private async Task ClearFilters()
     {
         _searchTerm = "";
+        _selectedCategoryId = null;
+        _stockFilter = "all";
         await LoadAsync();
     }
 

@@ -7,21 +7,27 @@ public class ProductService(HttpClient http)
 {
     private const string BasePath = "api/products";
     // this service class provides methods to interact with the product-related API endpoints.
-    public async Task<List<Product>> GetAllAsync(string? term = null)
+    public async Task<List<Product>> GetAllAsync(string? term = null, int? categoryId = null, string? stockFilter = null)
     {
-        // Load all products, optionally filtered by a search term
         try
         {
             var url = BasePath;
             var queryParams = new List<string>();
-            // If a search term is provided, add it as a query parameter to the request URL.
 
             if (!string.IsNullOrWhiteSpace(term))
             {
                 queryParams.Add($"term={Uri.EscapeDataString(term)}");
             }
 
-            // If there are any query parameters, append them to the URL.
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                queryParams.Add($"categoryId={categoryId.Value}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(stockFilter) && stockFilter != "all")
+            {
+                queryParams.Add($"stockFilter={stockFilter}");
+            }
 
             if (queryParams.Any())
             {
